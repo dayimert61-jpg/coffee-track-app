@@ -29,7 +29,7 @@ jobs:
 
     - name: Create Cordova Project & Build APK
       run: |
-        cordova create coffeeApp com.coffeetrack.app "CoffeeTrack"
+        cordova create coffeeApp com.coffeetrack.app.v2 "CoffeeTrack"
         cd coffeeApp
         cordova platform add android
         rm -rf www/*
