@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Restaurant Tycoon - Professional Simulation</title>
+    <script src="cordova.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(180deg, #1a0f0a 0%, #0d0603 100%);
+            --card-bg: #2b1810;
+            --card-border: #4a2c1d;
+            --accent-gold: #ffb703;
+            --text-light: #fefae0;
+            --primary-red: #d62828;
+            --success-green: #38b000;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient); color: var(--text-light);
+            margin: 0; padding: 12px; display: flex; flex-direction: column; align-items: center;
+            user-select: none; min-height: 100vh;
+        }
+
+        .header-title {
+            font-size: 1.4rem; font-weight: 900; color: var(--accent-gold);
+            letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; text-align: center;
+        }
+
+        .header-stats {
+            width: 100%; max-width: 500px; background-color: var(--card-bg);
+            border: 2px solid var(--card-border); border-radius: 14px; padding: 8px 12px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+        }
+        .stat-box { text-align: center; }
+        .stat-label { font-size: 0.65rem; color: #d5bdaf; text-transform: uppercase; font-weight: 700; }
+        .stat-value { font-size: 1.1rem; font-weight: 900; color: var(--accent-gold); }
+
+        .view-section { display: none; width: 100%; max-width: 500px; }
+        .view-section.active { display: block !important; }
+
+        .menu-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .btn-main-menu {
+            background: linear-gradient(145deg, #3d2215, #28150a);
+            border: 2px solid var(--accent-gold); color: #fff; padding: 16px;
+            border-radius: 14px; font-size: 1rem; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .btn-back {
+            width: 100%; background: var(--card-bg); border: 2px solid var(--accent-gold);
+            color: var(--accent-gold); padding: 12px; border-radius: 12px; font-weight: 900;
+            cursor: pointer; margin-bottom: 12px; text-transform: uppercase; text-align: center;
+        }
+
+        /* Restoran Görsel Masa Düzeni */
+        .restaurant-floor {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            background: #1a0f0a; border: 2px solid var(--card-border);
+            border-radius: 14px; padding: 12px; margin-bottom: 12px;
+        }
+        .table-card {
+            background: #2b1810; border: 2px solid #4a2c1d; border-radius: 12px;
+            padding: 8px; text-align: center; position: relative; min-height: 85px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .table-card.locked { opacity: 0.6; background: #150a05; }
+        .table-card.occupied { border-color: var(--accent-gold); background: #3d2215; }
+        .patience-bar {
+            width: 100%; height: 5px; background: #444; border-radius: 3px;
+            margin-top: 4px; overflow: hidden;
+        }
+        .patience-fill { height: 100%; background: var(--success-green); width: 100%; transition: width 0.5s linear; }
+
+        /* Kategori Sekmeleri */
+        .cat-tabs { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; }
+        .cat-btn {
+            background: #2b1810; border: 1px solid var(--card-border); color: #ccc;
+            padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+        }
+        .cat-btn.active { background: var(--accent-gold); color: #111; }
+
+        .grid-ingredients { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+        .btn-ingredient {
+            background: linear-gradient(145deg, #3d2215, #28150a); color: #fff;
+            border: 1px solid #5d3824; padding: 12px 6px; border-radius: 10px;
+            font-weight: 700; font-size: 0.85rem; cursor: pointer;
+        }
+
+        .plate-area {
+            min-height: 60px; border: 2px dashed var(--accent-gold); border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 8px; margin-bottom: 12px; background: #120804; flex-wrap: wrap;
+        }
+        .ingredient-chip { background: #4a2c1d; border: 1px solid var(--accent-gold); padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; }
+
+        .panel-box {
+            background: var(--card-bg); border: 2px solid var(--card-border);
+            border-radius: 14px; padding: 14px; margin-bottom: 12px;
+        }
+        .panel-title { font-size: 0.95rem; font-weight: 900; color: var(--accent-gold); margin-bottom: 10px; text-transform: uppercase; }
+        .finance-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 6px 0; border-bottom: 1px solid #3d2215; }
+
+        .buy-item-btn {
+            width: 100%; background: linear-gradient(145deg, #3d2215, #28150a);
+            border: 1px solid var(--accent-gold); color: #fff; padding: 12px;
+            border-radius: 10px; font-size: 0.85rem; font-weight: 800; cursor: pointer;
+            margin-top: 8px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .message-box { text-align: center; font-weight: 900; height: 20px; margin-top: 6px; font-size: 0.9rem; }
+        .success { color: #38b000; }
+        .error { color: #ff4d4d; }
+    </style>
+</head>
+<body>
+
+    <div class="header-title">🍽️ GRAND RESTAURANT TYCOON 🍽️</div>
+
+    <div class="header-stats">
+        <div class="stat-box">
+            <div class="stat-label">Budget</div>
+            <div class="stat-value" id="money" style="color:#38b000;">$150</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Rating</div>
+            <div class="stat-value" id="rating">⭐ 5.0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Level / XP</div>
+            <div class="stat-value" id="level-display" style="color:#2a9d8f;">Lvl 1</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Shift Time</div>
+            <div class="stat-value" id="timer" style="color:var(--primary-red);">60s</div>
+        </div>
+    </div>
+
+    <!-- MAIN MENU -->
+    <div id="sec-menu" class="view-section active">
+        <div class="menu-grid">
+            <button class="btn-main-menu" onclick="playSound('click'); openSection('sec-game');">
+                <span>🎮 Open Restaurant (Day <span id="menu-day-num">1</span>)</span><span>➔</span>
+            </button>
+            <button class="btn-main-menu" onclick="playSound('click'); openSection('sec-staff');">
+                <span>👥 Staff Management & Hiring</span><span>➔</span>
+            </button>
+            <button class="btn-main-menu" onclick="playSound('click'); openSection('sec-shop');">
+                <span>🛒 Product Catalog & Unlocks</span><span>➔</span>
+            </button>
+            <button class="btn-main-menu" onclick="playSound('click'); openSection('sec-tables');">
+                <span>🪑 Buy Tables & Expansion</span><span>➔</span>
+            </button>
+            <button class="btn-main-menu" onclick="playSound('click'); openSection('sec-budget');">
+                <span>📊 Taxes & Financial Statement</span><span>➔</span>
+            </button>
+            <button class="btn-main-menu" onclick="playSound('click'); openSection('sec-rules');">
+                <span>📖 Restaurant Guide & Rules</span><span>➔</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY: RESTAURANT FLOOR -->
+    <div id="sec-game" class="view-section">
+        <button class="btn-back" onclick="playSound('click'); openSection('sec-menu');">🔙 Back to Main Menu</button>
+
+        <div style="font-size: 0.8rem; color: #d5bdaf; margin-bottom: 6px; font-weight:700;">RESTAURANT FLOOR PLAN:</div>
+        <div class="restaurant-floor" id="floor-grid"></div>
+
+        <div class="panel-box">
+            <div class="section-label">Active Customer Order: <span id="active-order-name" style="color:var(--accent-gold);">Select Occupied Table...</span></div>
+            <div class="plate-area" id="plate">
+                <span style="color: #8d6e63; font-size: 0.8rem;">Select items below to cook...</span>
+            </div>
+
+            <!-- Category Filter Tabs -->
+            <div class="cat-tabs">
+                <button class="cat-btn active" onclick="filterCat('hot')">☕ Hot Drinks</button>
+                <button class="cat-btn" onclick="filterCat('cold')">🧊 Cold Drinks</button>
+                <button class="cat-btn" onclick="filterCat('dessert')">🍰 Desserts</button>
+                <button class="cat-btn" onclick="filterCat('pastry')">🥐 Pastries</button>
+            </div>
+
+            <div class="grid-ingredients" id="ingredients-grid"></div>
+
+            <div style="display:flex; gap:8px;">
+                <button class="buy-item-btn" style="flex:1; background:var(--primary-red);" onclick="clearPlate()">Clear Plate</button>
+                <button class="buy-item-btn" style="flex:1; background:var(--success-green);" onclick="serveActiveOrder()">Serve Table</button>
+            </div>
+            <button class="buy-item-btn" style="background:#2a9d8f; margin-top:6px;" onclick="buyExtraTime()">⏱️ Buy +15s Time ($30)</button>
+            <div class="message-box" id="message"></div>
+        </div>
+    </div>
+
+    <!-- STAFF MANAGEMENT -->
+    <div id="sec-staff" class="view-section">
+        <button class="btn-back" onclick="playSound('click'); openSection('sec-menu');">🔙 Back to Main Menu</button>
+        <div class="panel-box">
+            <div class="panel-title">👥 STAFF & EMPLOYEE MANAGEMENT</div>
+            <div class="finance-row"><span>Master Chef ($20/day):</span><strong id="chef-status">Not Hired</strong></div>
+            <button class="buy-item-btn" onclick="hireStaff('chef', 20)">Hire Chef (Prepares Food Faster)</button>
+            
+            <div class="finance-row" style="margin-top:10px;"><span>Head Waiter ($15/day):</span><strong id="waiter-status">Not Hired</strong></div>
+            <button class="buy-item-btn" onclick="hireStaff('waiter', 15)">Hire Waiter (Increases Customer Patience)</button>
+
+            <div class="finance-row" style="margin-top:10px;"><span>Cleaner ($10/day):</span><strong id="cleaner-status">Not Hired</strong></div>
+            <button class="buy-item-btn" onclick="hireStaff('cleaner', 10)">Hire Cleaner (Maintains 5-Star Rating)</button>
+        </div>
+    </div>
+
+    <!-- PRODUCT CATALOG & SHOP -->
+    <div id="sec-shop" class="view-section">
+        <button class="btn-back" onclick="playSound('click'); openSection('sec-menu');">🔙 Back to Main Menu</button>
+        <div class="panel-box">
+            <div class="panel-title">🛒 UNLOCK NEW GOURMET PRODUCTS</div>
+            <div id="shop-container"></div>
+        </div>
+    </div>
+
+    <!-- TABLES & CAPACITY -->
+    <div id="sec-tables" class="view-section">
+        <button class="btn-back" onclick="playSound('click'); openSection('sec-menu');">🔙 Back to Main Menu</button>
+        <div class="panel-box">
+            <div class="panel-title">🪑 EXPAND SALON TABLES</div>
+            <p style="font-size: 0.85rem; color: #ccc;">Buying extra tables allows more customers to enter simultaneously!</p>
+            <button class="buy-item-btn" id="btn-buy-table" onclick="buyTable()">
+                <span>Unlock Table #<span id="next-table-num">3</span></span>
+                <strong id="table-cost-text">$60</strong>
+            </button>
+        </div>
+    </div>
+
+    <!-- BUDGET, TAXES & FINANCIALS -->
+    <div id="sec-budget" class="view-section">
+        <button class="btn-back" onclick="playSound('click'); openSection('sec-menu');">🔙 Back to Main Menu</button>
+        <div class="panel-box">
+            <div class="panel-title">📊 FINANCIAL & TAX STATEMENT</div>
+            <div class="finance-row"><span>Gross Revenue:</span><strong id="stat-revenue" style="color:#38b000;">$0</strong></div>
+            <div class="finance-row"><span>Ingredient Costs:</span><strong id="stat-costs" style="color:#ff4d4d;">$0</strong></div>
+            <div class="finance-row"><span>Staff Salaries Paid:</span><strong id="stat-salaries" style="color:#ff4d4d;">$0</strong></div>
+            <div class="finance-row"><span>Government Taxes (10%):</span><strong id="stat-tax" style="color:#ff4d4d;">$0</strong></div>
+            <div class="finance-row" style="font-size: 1rem; border-top: 2px solid var(--accent-gold); margin-top: 6px; padding-top: 8px;">
+                <span>NET PROFIT:</span><strong id="stat-profit" style="color:var(--accent-gold);">$0</strong>
+            </div>
+        </div>
+        <button class="buy-item-btn" style="background:var(--primary-red);" onclick="resetAllProgress()">🗑️ Reset Game Progress</button>
+    </div>
+
+    <!-- RULES & GUIDE -->
+    <div id="sec-rules" class="view-section">
+        <button class="btn-back" onclick="playSound('click'); openSection('sec-menu');">🔙 Back to Main Menu</button>
+        <div class="panel-box">
+            <div class="panel-title">📖 RESTAURANT OPERATING RULES</div>
+            <p style="font-size:0.85rem; line-height:1.4; color:#ddd;">
+                1. <strong>Customer Patience:</strong> Müşteriler masaya oturduğunda sabır barları azalmaya başlar. Süre bitmeden doğru yemeği servis edin.<br><br>
+                2. <strong>Staff & Wages:</strong> İşe aldığınız personel günlük maaş alır ve vardiya sonunda otomatik ödenir.<br><br>
+                3. <strong>Taxes:</strong> Her gün kazandığınız brüt kârın %10'u devlet vergisi olarak kesilir.<br><br>
+                4. <strong>Rating:</strong> Başarılı ve hızlı servisler restoran yıldızınızı artırır, yanlış veya geciken siparişler düşürür.<br><br>
+                5. <strong>Categories:</strong> Mutfakta malzemeler sekmelere ayrılmıştır. Aradığınız malzemeyi ilgili kategoriden hızlıca seçebilirsiniz.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio API Sound Synthesizer
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if (type === 'success') {
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        const ingredientsMaster = [
+            { id: "Espresso", name: "☕ Espresso", cat: "hot", cost: 2, unlocked: true },
+            { id: "Milk", name: "🥛 Milk", cat: "hot", cost: 2, unlocked: true },
+            { id: "Tea Bag", name: "🍵 Tea Bag", cat: "hot", cost: 1, unlocked: true },
+            { id: "Ice", name: "🧊 Ice", cat: "cold", cost: 1, unlocked: false, price: 40 },
+            { id: "Lemonade", name: "🍋 Lemonade", cat: "cold", cost: 3, unlocked: false, price: 50 },
+            { id: "Choco Syrup", name: "🍫 Choco", cat: "cold", cost: 3, unlocked: false, price: 60 },
+            { id: "Croissant", name: "🥐 Croissant", cat: "pastry", cost: 4, unlocked: true },
+            { id: "Muffin", name: "🧁 Muffin", cat: "pastry", cost: 5, unlocked: false, price: 70 },
+            { id: "Cheesecake", name: "🍰 Cheesecake", cat: "dessert", cost: 8, unlocked: false, price: 90 },
+            { id: "Tiramisu", name: "🍮 Tiramisu", cat: "dessert", cost: 10, unlocked: false, price: 120 }
+        ];
+
+        const recipesMaster = [
+            { name: "Espresso Coffee", ingredients: ["Espresso"], price: 15 },
+            { name: "Caffe Latte", ingredients: ["Espresso", "Milk"], price: 25 },
+            { name: "Traditional Tea", ingredients: ["Tea Bag"], price: 10 },
+            { name: "Iced Coffee", ingredients: ["Espresso", "Milk", "Ice"], price: 35 },
+            { name: "Fresh Lemonade", ingredients: ["Lemonade", "Ice"], price: 30 },
+            { name: "Chocolate Shake", ingredients: ["Milk", "Choco Syrup", "Ice"], price: 45 },
+            { name: "Croissant Set", ingredients: ["Espresso", "Croissant"], price: 35 },
+            { name: "Muffin & Latte", ingredients: ["Espresso", "Milk", "Muffin"], price: 50 },
+            { name: "Cheesecake Special", ingredients: ["Espresso", "Cheesecake"], price: 65 },
+            { name: "Royal Tiramisu", ingredients: ["Espresso", "Milk", "Tiramisu"], price: 80 }
+        ];
+
+        let money = 150;
+        let day = 1;
+        let rating = 5.0;
+        let xp = 0;
+        let level = 1;
+        let tables = [
+            { id: 1, unlocked: true, occupied: false, order: null, patience: 100 },
+            { id: 2, unlocked: true, occupied: false, order: null, patience: 100 },
+            { id: 3, unlocked: false, occupied: false, order: null, patience: 100 },
+            { id: 4, unlocked: false, occupied: false, order: null, patience: 100 },
+            { id: 5, unlocked: false, occupied: false, order: null, patience: 100 },
+            { id: 6, unlocked: false, occupied: false, order: null, patience: 100 }
+        ];
+
+        let staff = { chef: false, waiter: false, cleaner: false };
+        let activeTableId = null;
+        let currentPlate = [];
+        let currentCat = "hot";
+        let timeLeft = 60;
+        let timerInterval = null;
+        let customerInterval = null;
+
+        let grossRevenue = 0;
+        let ingredientCosts = 0;
+        let staffSalaries = 0;
+        let totalTaxes = 0;
+
+        function initApp() {
+            updateUI();
+            renderFloor();
+            renderIngredients();
+            renderShop();
+        }
+
+        function openSection(secId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(secId).classList.add('active');
+
+            if (secId === 'sec-game') {
+                startShiftTimer();
+                startCustomerSpawner();
+            } else {
+                stopShiftTimer();
+            }
+        }
+
+        function startShiftTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft + "s";
+                
+                // Müşteri Sabır Azalması
+                tables.forEach(t => {
+                    if (t.occupied) {
+                        const speed = staff.waiter ? 0.8 : 1.5;
+                        t.patience -= speed;
+                        if (t.patience <= 0) {
+                            t.occupied = false;
+                            t.order = null;
+                            rating = Math.max(1.0, (rating - 0.2)).toFixed(1);
+                            playSound('error');
+                            updateUI();
+                            renderFloor();
+                        }
+                    }
+                });
+
+                if (timeLeft <= 0) {
+                    stopShiftTimer();
+                    endDayShift();
+                }
+            }, 1000);
+        }
+
+        function stopShiftTimer() {
+            clearInterval(timerInterval); timerInterval = null;
+            clearInterval(customerInterval); customerInterval = null;
+        }
+
+        function startCustomerSpawner() {
+            if (customerInterval) return;
+            customerInterval = setInterval(() => {
+                const emptyTables = tables.filter(t => t.unlocked && !t.occupied);
+                if (emptyTables.length > 0) {
+                    const randomTable = emptyTables[Math.floor(Math.random() * emptyTables.length)];
+                    const unlockedIngs = ingredientsMaster.filter(i => i.unlocked).map(i => i.id);
+                    const availRecipes = recipesMaster.filter(r => r.ingredients.every(ing => unlockedIngs.includes(ing)));
+
+                    randomTable.occupied = true;
+                    randomTable.order = availRecipes[Math.floor(Math.random() * availRecipes.length)];
+                    randomTable.patience = 100;
+                    renderFloor();
+                }
+            }, 5000);
+        }
+
+        function endDayShift() {
+            const dailyTax = Math.round(grossRevenue * 0.10);
+            totalTaxes += dailyTax;
+            money = Math.max(0, money - dailyTax);
+
+            alert(`🌅 DAY ${day} COMPLETED!\n\n• Gross Revenue: $${grossRevenue}\n• Daily Taxes Paid (10%): $${dailyTax}\n• Staff Salaries Paid: $${staffSalaries}\n• Restaurant Rating: ⭐ ${rating}`);
+
+            day++;
+            timeLeft = 60 + (level * 5);
+            tables.forEach(t => { t.occupied = false; t.order = null; });
+            document.getElementById('timer').innerText = timeLeft + "s";
+            updateUI();
+            openSection('sec-menu');
+        }
+
+        function renderFloor() {
+            const grid = document.getElementById('floor-grid');
+            grid.innerHTML = '';
+            tables.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'table-card' + (!t.unlocked ? ' locked' : '') + (t.occupied ? ' occupied' : '');
+                if (!t.unlocked) {
+                    card.innerHTML = `🔒<br><small>Locked</small>`;
+                } else if (!t.occupied) {
+                    card.innerHTML = `🪑 Table #${t.id}<br><small style="color:#2a9d8f;">Empty</small>`;
+                } else {
+                    card.onclick = () => selectTable(t.id);
+                    card.innerHTML = `
+                        👨‍🍳 Table #${t.id}<br><strong>${t.order.name}</strong>
+                        <div class="patience-bar"><div class="patience-fill" style="width:${t.patience}%;"></div></div>
+                    `;
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        function selectTable(id) {
+            playSound('click');
+            activeTableId = id;
+            const t = tables.find(item => item.id === id);
+            document.getElementById('active-order-name').innerText = `Table #${id}: ${t.order.name}`;
+        }
+
+        function filterCat(cat) {
+            playSound('click');
+            currentCat = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            renderIngredients();
+        }
+
+        function renderIngredients() {
+            const grid = document.getElementById('ingredients-grid');
+            grid.innerHTML = '';
+            ingredientsMaster.filter(i => i.unlocked && i.cat === currentCat).forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-ingredient';
+                btn.innerText = item.name;
+                btn.onclick = () => { playSound('click'); addIngredient(item.id); };
+                grid.appendChild(btn);
+            });
+        }
+
+        function addIngredient(id) {
+            currentPlate.push(id);
+            renderPlate();
+        }
+
+        function clearPlate() {
+            playSound('click');
+            currentPlate = [];
+            renderPlate();
+        }
+
+        function renderPlate() {
+            const plateDiv = document.getElementById('plate');
+            plateDiv.innerHTML = '';
+            if (currentPlate.length === 0) {
+                plateDiv.innerHTML = '<span style="color: #8d6e63; font-size: 0.8rem;">Select items below to cook...</span>';
+                return;
+            }
+            currentPlate.forEach(ing => {
+                const chip = document.createElement('span');
+                chip.className = 'ingredient-chip';
+                chip.innerText = ing;
+                plateDiv.appendChild(chip);
+            });
+        }
+
+        function serveActiveOrder() {
+            if (!activeTableId) { alert("Please select an occupied table first!"); return; }
+            const t = tables.find(item => item.id === activeTableId);
+            if (!t || !t.occupied) return;
+
+            const isCorrect = currentPlate.length === t.order.ingredients.length &&
+                              currentPlate.every((val, index) => val === t.order.ingredients[index]);
+
+            if (isCorrect) {
+                playSound('success');
+                money += t.order.price;
+                grossRevenue += t.order.price;
+                xp += 15;
+                if (xp >= level * 50) { level++; alert("🎉 LEVEL UP! Level " + level + " (+5s Extra Shift Time)"); }
+
+                t.occupied = false;
+                t.order = null;
+                activeTableId = null;
+                document.getElementById('active-order-name').innerText = "Select Occupied Table...";
+                clearPlate();
+                updateUI();
+                renderFloor();
+            } else {
+                playSound('error');
+                alert("❌ Wrong order recipe!");
+            }
+        }
+
+        function buyExtraTime() {
+            if (money >= 30) {
+                playSound('click');
+                money -= 30;
+                timeLeft += 15;
+                updateUI();
+            } else { alert("Not enough budget!"); }
+        }
+
+        function hireStaff(role, wage) {
+            if (money >= wage) {
+                playSound('click');
+                staff[role] = true;
+                money -= wage;
+                staffSalaries += wage;
+                document.getElementById(role + '-status').innerText = "Hired ($" + wage + "/day)";
+                updateUI();
+            } else { alert("Not enough budget!"); }
+        }
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            ingredientsMaster.filter(i => !i.unlocked).forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'buy-item-btn';
+                btn.innerHTML = `<span>Unlock <strong>${item.name}</strong></span> <strong>$${item.price}</strong>`;
+                btn.onclick = () => unlockProduct(item.id, item.price);
+                container.appendChild(btn);
+            });
+        }
+
+        function unlockProduct(id, price) {
+            if (money >= price) {
+                playSound('success');
+                money -= price;
+                const item = ingredientsMaster.find(i => i.id === id);
+                item.unlocked = true;
+                updateUI();
+                renderIngredients();
+                renderShop();
+            } else { alert("Not enough budget!"); }
+        }
+
+        function buyTable() {
+            const nextTable = tables.find(t => !t.unlocked);
+            if (nextTable && money >= 60) {
+                playSound('success');
+                money -= 60;
+                nextTable.unlocked = true;
+                updateUI();
+                renderFloor();
+            } else { alert("Not enough budget or max capacity reached!"); }
+        }
+
+        function updateUI() {
+            document.getElementById('money').innerText = "$" + money;
+            document.getElementById('rating').innerText = "⭐ " + rating;
+            document.getElementById('level-display').innerText = "Lvl " + level;
+            document.getElementById('menu-day-num').innerText = day;
+            document.getElementById('stat-revenue').innerText = "$" + grossRevenue;
+            document.getElementById('stat-costs').innerText = "$" + ingredientCosts;
+            document.getElementById('stat-salaries').innerText = "$" + staffSalaries;
+            document.getElementById('stat-tax').innerText = "$" + totalTaxes;
+            document.getElementById('stat-profit').innerText = "$" + (grossRevenue - ingredientCosts - staffSalaries - totalTaxes);
+        }
+
+        function resetAllProgress() {
+            if (confirm("Reset all restaurant progress?")) { location.reload(); }
+        }
+
+        window.onload = function() {
+            initApp();
+            openSection('sec-menu');
+        };
+    </script>
+</body>
+</html>
